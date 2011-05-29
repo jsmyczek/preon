@@ -146,6 +146,7 @@
         <configuration>
           <header>src/etc/header.txt</header>
           <aggregate>true</aggregate>
+          <failIfMissing>false</failIfMissing>
           <includes>
             <include>**/*.java</include>
           </includes>
