@@ -32,15 +32,22 @@
  */
 package org.codehaus.preon.codec;
 
+import org.codehaus.preon.el.Document;
 import org.codehaus.preon.el.Expression;
+import org.codehaus.preon.Builder;
+import org.codehaus.preon.DecodingException;
 import org.codehaus.preon.Resolver;
+import org.codehaus.preon.buffer.BitBuffer;
 import org.codehaus.preon.buffer.ByteOrder;
 import org.codehaus.preon.channel.BitChannel;
+import org.codehaus.preon.codec.NumericCodec;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 import org.mockito.runners.MockitoJUnitRunner;
@@ -61,6 +68,15 @@ public class NumericCodecTest {
 
     @Mock
     private BitChannel channel;
+    
+    @Mock
+    private BitBuffer buffer;
+    
+    @Mock
+    private NumericCodec.NumericType type;
+
+    @Mock
+    private Builder builder;
 
     @Test
     public void shouldEncodeCorrectly() throws IOException {
@@ -68,5 +84,16 @@ public class NumericCodecTest {
         when(size.eval(resolver)).thenReturn(3);
         codec.encode(new Long(12L), channel, resolver);
         Mockito.verify(channel).write(3, 12L, ByteOrder.BigEndian);
+    }
+    
+    @Test
+    public void shouldMatchCorrectly() throws IOException, DecodingException {
+        int bits = 3;
+        Integer value = 12;
+        NumericCodec codec = new NumericCodec(size, ByteOrder.BigEndian, type, matchExpression);
+        when(size.eval(resolver)).thenReturn(bits);
+        when(type.decode(buffer, bits, ByteOrder.BigEndian)).thenReturn(value);
+        when(matchExpression.eval(resolver)).thenReturn(value);
+        assertThat((Integer) codec.decode(buffer, resolver, builder), is(value));
     }
 }

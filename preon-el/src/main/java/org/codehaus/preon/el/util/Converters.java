@@ -37,6 +37,7 @@ public class Converters {
     private static ByteToIntegerConverter byteToInteger = new ByteToIntegerConverter();
     private static ShortToIntegerConverter shortToInteger = new ShortToIntegerConverter();
     private static LongToIntegerConverter longToInteger = new LongToIntegerConverter();
+    private static IntToIntegerConverter intToInteger = new IntToIntegerConverter();
 
     public static <T, V> Converter<T, V> get(Class<T> from, Class<V> to) {
         if (to == Integer.class || to == int.class) {
@@ -46,6 +47,8 @@ public class Converters {
                 return (Converter<T, V>) shortToInteger;
             } else if (from == Long.class || from == long.class) {
                 return (Converter<T, V>) longToInteger;
+            } else if (from == Integer.class || from == int.class) {
+                return (Converter<T, V>) intToInteger;
             } else {
                 return null;
             }
@@ -88,6 +91,18 @@ public class Converters {
 
         public Integer convert(Long instance) {
             return instance.intValue();
+        }
+
+        public Class<Integer> getTargetType() {
+            return Integer.class;
+        }
+
+    }
+
+    private static class IntToIntegerConverter implements Converter<Integer, Integer> {
+
+        public Integer convert(Integer instance) {
+            return instance;
         }
 
         public Class<Integer> getTargetType() {
