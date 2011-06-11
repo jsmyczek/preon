@@ -34,6 +34,7 @@ package org.codehaus.preon.codec;
 
 import org.codehaus.preon.*;
 import org.codehaus.preon.util.EnumUtils;
+import org.codehaus.preon.annotation.BoundEnumOption;
 import org.codehaus.preon.annotation.BoundNumber;
 import org.codehaus.preon.descriptor.Documenters;
 import org.codehaus.preon.channel.BitChannel;
@@ -94,7 +95,14 @@ public class EnumCodec<T> implements Codec<T> {
     }
 
     public void encode(T object, BitChannel channel, Resolver resolver) throws IOException {
-        channel.write(size.eval(resolver), inverseMapping.get(object), byteOrder);
+        Long value = inverseMapping.get(object);
+        if (value == null) {
+            throw new NullPointerException(String.format(
+                    "Cannot encode enum constant %s.%s without @%s annotation",
+                    object.getClass().getName(), object, 
+                    BoundEnumOption.class.getSimpleName()));
+        }
+        channel.write(size.eval(resolver), value.longValue(), byteOrder);
     }
 
     public Class<?>[] getTypes() {
