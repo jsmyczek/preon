@@ -76,6 +76,8 @@ public class LimboTest {
     public void testHexidecimalNotation() throws RecognitionException, InvalidExpressionException {
         assertEquals(255, arithmetic(context, resolver, "0xff"));
         assertEquals(16, arithmetic(context, resolver, "0x10"));
+        assertEquals(24, arithmetic(context, resolver, "0x18"));
+        assertEquals(169, arithmetic(context, resolver, "0xA9"));
     }
 
     @Test
