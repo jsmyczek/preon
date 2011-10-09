@@ -32,21 +32,37 @@
  */
 package org.codehaus.preon.codec;
 
+import java.io.IOException;
+import java.lang.reflect.AnnotatedElement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import nl.flotsam.pecia.Documenter;
 import nl.flotsam.pecia.ParaContents;
 import nl.flotsam.pecia.SimpleContents;
 import nl.flotsam.pecia.Table2Cols;
-import org.codehaus.preon.*;
+
+import org.codehaus.preon.Builder;
+import org.codehaus.preon.Codec;
+import org.codehaus.preon.CodecDescriptor;
+import org.codehaus.preon.CodecFactory;
+import org.codehaus.preon.DecodingException;
+import org.codehaus.preon.Resolver;
+import org.codehaus.preon.ResolverContext;
 import org.codehaus.preon.annotation.Choices;
 import org.codehaus.preon.buffer.BitBuffer;
 import org.codehaus.preon.buffer.ByteOrder;
 import org.codehaus.preon.channel.BitChannel;
 import org.codehaus.preon.descriptor.Documenters;
-import org.codehaus.preon.el.*;
-
-import java.lang.reflect.AnnotatedElement;
-import java.util.ArrayList;
-import java.util.List;
+import org.codehaus.preon.el.BindingException;
+import org.codehaus.preon.el.ContextReplacingReference;
+import org.codehaus.preon.el.Document;
+import org.codehaus.preon.el.Expression;
+import org.codehaus.preon.el.Expressions;
+import org.codehaus.preon.el.Reference;
+import org.codehaus.preon.el.ReferenceContext;
+import org.codehaus.preon.el.ast.RelationalNode;
 
 /**
  * A Codec supporting the {@link Choices} annotation.
@@ -152,8 +168,23 @@ public class SelectFromCodec<T> implements Codec<T> {
         }
     }
 
-    public void encode(T value, BitChannel channel, Resolver resolver) {
-        throw new UnsupportedOperationException();
+    public void encode(T value, BitChannel channel, Resolver resolver) 
+            throws IOException {
+        if (prefixSize > 0) {
+            int selected = Arrays.asList(types).indexOf(value.getClass());
+            
+            Expression<Boolean, Resolver> cond = conditions.get(selected);
+            if (cond instanceof RelationalNode) {
+                int prefix = ((RelationalNode) cond).getExpectedValue(resolver);
+                
+                channel.write(prefixSize, prefix, byteOrder);
+                Codec<T> codec = (Codec<T>) codecs.get(selected);
+                codec.encode(value, channel, resolver);
+                return;
+            }
+        }
+        throw new UnsupportedOperationException(
+                "Only {prefixSize>0, condition=\"prefix==int\"} case is supported");
     }
 
     public Expression<Integer, Resolver> getSize() {

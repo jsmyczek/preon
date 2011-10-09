@@ -32,24 +32,38 @@
  */
 package org.codehaus.preon.codec;
 
+import static org.codehaus.preon.buffer.ByteOrder.BigEndian;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.easymock.EasyMock.isNull;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertArrayEquals;
+
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.nio.ByteBuffer;
 
-import org.codehaus.preon.el.Expressions;
+import junit.framework.TestCase;
+
 import org.codehaus.preon.Builder;
 import org.codehaus.preon.Codec;
 import org.codehaus.preon.CodecFactory;
+import org.codehaus.preon.Codecs;
 import org.codehaus.preon.DecodingException;
 import org.codehaus.preon.Resolver;
 import org.codehaus.preon.ResolverContext;
+import org.codehaus.preon.annotation.BoundNumber;
+import org.codehaus.preon.annotation.BoundObject;
 import org.codehaus.preon.annotation.Choices;
+import org.codehaus.preon.annotation.Choices.Choice;
 import org.codehaus.preon.buffer.BitBuffer;
 import org.codehaus.preon.buffer.ByteOrder;
 import org.codehaus.preon.buffer.DefaultBitBuffer;
-import junit.framework.TestCase;
-
-import static org.easymock.EasyMock.*;
+import org.codehaus.preon.el.Expressions;
 
 /**
  * A collection of tests for the {@link SelectFromCodec}.
@@ -177,5 +191,36 @@ public class SelectFromCodecTest extends TestCase {
         // Verify
         verify(codecFactory, context, metadata, shortCodec, integerCodec, floatCodec, resolver,
                 builder);
+    }
+    
+    public void testEncode() throws IOException, DecodingException {
+        class Command {
+        }
+        class Run extends Command {
+            @BoundNumber(size = "16", byteOrder = BigEndian) int speed;
+            @BoundNumber(size = "8")                         int direction;
+            Run(int s, int d) { speed = s; direction = d; }
+        }
+        class Hide extends Command {
+            @BoundNumber(size = "32", byteOrder = BigEndian) int safehouse;
+            Hide(int s) { safehouse = s; }
+        }
+        class Message {
+            @BoundObject(selectFrom = @Choices(
+                    prefixSize = 16, byteOrder = BigEndian, alternatives = {
+                    @Choice(condition = "prefix == 0x08", type = Run.class),
+                    @Choice(condition = "prefix == 0x18", type = Hide.class) }))
+            Command cmd;
+            Message(Command c) { cmd = c; }
+        }
+        Codec<Message> msgCodec = Codecs.create(Message.class);
+        
+        Message msg = new Message(new Run(30, 5));
+        byte[] data = Codecs.encode(msg, msgCodec);
+        assertArrayEquals(new byte[] { 0, 8, 0, 30, 5 }, data);
+        
+        msg = new Message(new Hide(101));
+        data = Codecs.encode(msg, msgCodec);
+        assertArrayEquals(new byte[] { 0, 0x18, 0, 0, 0, 101 }, data);
     }
 }

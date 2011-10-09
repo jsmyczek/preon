@@ -34,7 +34,10 @@ package org.codehaus.preon.el.ast;
 
 import java.util.Set;
 
-import org.codehaus.preon.el.*;
+import org.codehaus.preon.el.BindingException;
+import org.codehaus.preon.el.Document;
+import org.codehaus.preon.el.Reference;
+import org.codehaus.preon.el.ReferenceContext;
 import org.codehaus.preon.el.util.ClassUtils;
 import org.codehaus.preon.el.util.StringBuilderDocument;
 
@@ -249,5 +252,20 @@ public class RelationalNode<T extends Comparable<T>, E> extends
 
     public Node<Boolean, E> rescope(ReferenceContext<E> context) {
         return new RelationalNode<T,E>(relation, lhs.rescope(context), rhs.rescope(context));
+    }
+
+    /**
+     * Assuming that relation has form <i>variable == number</i>, returns
+     * the number.
+     */
+    public int getExpectedValue(E context) throws UnsupportedOperationException {
+        if (relation.equals(Relation.EQ) && lhs instanceof ReferenceNode) {
+            Object constant = ((Node) this.rhs).eval(context);
+            
+            if (constant instanceof Number) {
+                return ((Number) constant).intValue();
+            }
+        }
+        throw new UnsupportedOperationException();
     }
 }
