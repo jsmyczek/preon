@@ -32,54 +32,56 @@
  */
 package org.codehaus.preon.codec;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.AnnotatedElement;
-
 import org.codehaus.preon.Codec;
-import org.codehaus.preon.annotation.BoundBuffer;
-import org.codehaus.preon.channel.OutputStreamBitChannel;
-import org.junit.Before;
+import org.codehaus.preon.Codecs;
+import org.codehaus.preon.DecodingException;
+import org.codehaus.preon.annotation.Bound;
+import org.codehaus.preon.annotation.BoundNumber;
+import org.codehaus.preon.annotation.If;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
-public class BoundBufferCodecFactoryTest {
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-    @Mock
-    private AnnotatedElement metadata;
+public class ConditionalsTest {
 
-    @Mock
-    private BoundBuffer boundBuffer;
-
-    private BoundBufferCodecFactory factory;
-
-    @Before
-    public void createFactory() {
-        factory = new BoundBufferCodecFactory();
+    @Test
+    public void preon46HandleFalseTest() throws DecodingException {
+        Codec<Preon46> codec = Codecs.create(Preon46.class);
+        Preon46 value = Codecs.decode(codec, (byte) 0, (byte) 1);
+        assertThat(value.flag, is(false));
+        assertThat(value.second, is(0));
     }
 
     @Test
-    public void encodedBufferShouldEqualMatchBuffer() throws IOException {
-        byte[] match = { 1, 2, 3, 4 };
-
-        when(metadata.isAnnotationPresent(BoundBuffer.class)).thenReturn(true);
-        when(metadata.getAnnotation(BoundBuffer.class)).thenReturn(boundBuffer);
-        when(boundBuffer.match()).thenReturn(match);
-
-        Codec<byte[]> codec = factory.create(metadata, byte[].class, null);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        codec.encode(match, new OutputStreamBitChannel(out), null);
-
-        byte[] output = out.toByteArray();
-        assertThat(output.length, is(match.length));
-        assertArrayEquals(match, output);
+    public void preon46HandleTrueTest() throws DecodingException {
+        Codec<Preon46> codec = Codecs.create(Preon46.class);
+        Preon46 value = Codecs.decode(codec, (byte) 1, (byte) 1);
+        assertThat(value.flag, is(true));
+        assertThat(value.second, is(1));
     }
+
+    public static class Preon46 {
+        @Bound
+        boolean notUsed1;
+        @Bound
+        boolean notUsed2;
+        @Bound
+        boolean notUsed3;
+        @Bound
+        boolean notUsed4;
+        @Bound
+        boolean notUsed5;
+        @Bound
+        boolean notUsed6;
+        @Bound
+        boolean notUsed7;
+        @Bound
+        boolean flag;
+
+        @If("flag")
+        @BoundNumber(size = "8")
+        int second;
+    }
+
 }

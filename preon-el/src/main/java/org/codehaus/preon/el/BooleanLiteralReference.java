@@ -30,56 +30,64 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package org.codehaus.preon.codec;
+package org.codehaus.preon.el;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
+/**
+ * Reference to boolean literal values.
+ *
+ * @param <E>
+ */
+public class BooleanLiteralReference<E> implements Reference<E> {
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.AnnotatedElement;
+    private boolean value;
+    private ReferenceContext<E> context;
 
-import org.codehaus.preon.Codec;
-import org.codehaus.preon.annotation.BoundBuffer;
-import org.codehaus.preon.channel.OutputStreamBitChannel;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-@RunWith(MockitoJUnitRunner.class)
-public class BoundBufferCodecFactoryTest {
-
-    @Mock
-    private AnnotatedElement metadata;
-
-    @Mock
-    private BoundBuffer boundBuffer;
-
-    private BoundBufferCodecFactory factory;
-
-    @Before
-    public void createFactory() {
-        factory = new BoundBufferCodecFactory();
+    public BooleanLiteralReference(boolean value, ReferenceContext<E> context) {
+        this.value = value;
+        this.context = context;
+    }
+    
+    public Object resolve(E context) {
+        return value;
     }
 
-    @Test
-    public void encodedBufferShouldEqualMatchBuffer() throws IOException {
-        byte[] match = { 1, 2, 3, 4 };
+    public ReferenceContext<E> getReferenceContext() {
+        return context;
+    }
 
-        when(metadata.isAnnotationPresent(BoundBuffer.class)).thenReturn(true);
-        when(metadata.getAnnotation(BoundBuffer.class)).thenReturn(boundBuffer);
-        when(boundBuffer.match()).thenReturn(match);
+    public boolean isAssignableTo(Class<?> type) {
+        return type.isAssignableFrom(Boolean.class);
+    }
 
-        Codec<byte[]> codec = factory.create(metadata, byte[].class, null);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        codec.encode(match, new OutputStreamBitChannel(out), null);
+    public Class<?> getType() {
+        return Boolean.class;
+    }
 
-        byte[] output = out.toByteArray();
-        assertThat(output.length, is(match.length));
-        assertArrayEquals(match, output);
+    public Reference<E> narrow(Class<?> type) {
+        return this;
+    }
+
+    public boolean isBasedOn(ReferenceContext<E> eReferenceContext) {
+        return false;
+    }
+
+    public Reference<E> rescope(ReferenceContext<E> eReferenceContext) {
+        return this;
+    }
+
+    public Reference<E> selectAttribute(String name) throws BindingException {
+        throw new BindingException("No such attribute");
+    }
+
+    public Reference<E> selectItem(String index) throws BindingException {
+        throw new BindingException("No such indexed value");
+    }
+
+    public Reference<E> selectItem(Expression<Integer, E> index) throws BindingException {
+        throw new BindingException("No such indexed value");
+    }
+
+    public void document(Document target) {
+        target.text(Boolean.toString(value));
     }
 }

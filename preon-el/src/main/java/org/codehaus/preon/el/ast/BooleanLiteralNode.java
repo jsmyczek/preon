@@ -30,56 +30,47 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package org.codehaus.preon.codec;
+package org.codehaus.preon.el.ast;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
+import org.codehaus.preon.el.Document;
+import org.codehaus.preon.el.Reference;
+import org.codehaus.preon.el.ReferenceContext;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.AnnotatedElement;
+import java.util.Set;
 
-import org.codehaus.preon.Codec;
-import org.codehaus.preon.annotation.BoundBuffer;
-import org.codehaus.preon.channel.OutputStreamBitChannel;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+public class BooleanLiteralNode<E> extends AbstractNode<Boolean, E> {
 
-@RunWith(MockitoJUnitRunner.class)
-public class BoundBufferCodecFactoryTest {
+    private boolean value;
 
-    @Mock
-    private AnnotatedElement metadata;
-
-    @Mock
-    private BoundBuffer boundBuffer;
-
-    private BoundBufferCodecFactory factory;
-
-    @Before
-    public void createFactory() {
-        factory = new BoundBufferCodecFactory();
+    public BooleanLiteralNode(boolean value) {
+        this.value = value;
+    }
+    
+    public Boolean eval(E context) {
+        return value;
     }
 
-    @Test
-    public void encodedBufferShouldEqualMatchBuffer() throws IOException {
-        byte[] match = { 1, 2, 3, 4 };
+    public Class<Boolean> getType() {
+        return Boolean.class;
+    }
 
-        when(metadata.isAnnotationPresent(BoundBuffer.class)).thenReturn(true);
-        when(metadata.getAnnotation(BoundBuffer.class)).thenReturn(boundBuffer);
-        when(boundBuffer.match()).thenReturn(match);
+    public Node<Boolean, E> simplify() {
+        return this;
+    }
 
-        Codec<byte[]> codec = factory.create(metadata, byte[].class, null);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        codec.encode(match, new OutputStreamBitChannel(out), null);
+    public Node<Boolean, E> rescope(ReferenceContext<E> eReferenceContext) {
+        return this;
+    }
 
-        byte[] output = out.toByteArray();
-        assertThat(output.length, is(match.length));
-        assertArrayEquals(match, output);
+    public void gather(Set<Reference<E>> references) {
+        // Nothing to do
+    }
+
+    public boolean isParameterized() {
+        return false;
+    }
+
+    public void document(Document target) {
+        target.text(Boolean.toString(value));
     }
 }

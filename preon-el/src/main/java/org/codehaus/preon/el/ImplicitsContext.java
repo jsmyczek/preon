@@ -30,56 +30,40 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package org.codehaus.preon.codec;
+package org.codehaus.preon.el;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
+/**
+ * A context that 'imports' constant references such as true and false.
+ *
+ * @param <E>
+ */
+public class ImplicitsContext<E> implements ReferenceContext<E> {
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.AnnotatedElement;
+    private ReferenceContext<E> nested;
 
-import org.codehaus.preon.Codec;
-import org.codehaus.preon.annotation.BoundBuffer;
-import org.codehaus.preon.channel.OutputStreamBitChannel;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-@RunWith(MockitoJUnitRunner.class)
-public class BoundBufferCodecFactoryTest {
-
-    @Mock
-    private AnnotatedElement metadata;
-
-    @Mock
-    private BoundBuffer boundBuffer;
-
-    private BoundBufferCodecFactory factory;
-
-    @Before
-    public void createFactory() {
-        factory = new BoundBufferCodecFactory();
+    public ImplicitsContext(ReferenceContext<E> nested) {
+        this.nested = nested;
     }
 
-    @Test
-    public void encodedBufferShouldEqualMatchBuffer() throws IOException {
-        byte[] match = { 1, 2, 3, 4 };
-
-        when(metadata.isAnnotationPresent(BoundBuffer.class)).thenReturn(true);
-        when(metadata.getAnnotation(BoundBuffer.class)).thenReturn(boundBuffer);
-        when(boundBuffer.match()).thenReturn(match);
-
-        Codec<byte[]> codec = factory.create(metadata, byte[].class, null);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        codec.encode(match, new OutputStreamBitChannel(out), null);
-
-        byte[] output = out.toByteArray();
-        assertThat(output.length, is(match.length));
-        assertArrayEquals(match, output);
+    public Reference<E> selectAttribute(String name) throws BindingException {
+        if ("true".equals(name) || "false".equals(name)) {
+            return new BooleanLiteralReference<E>(Boolean.parseBoolean(name), this);
+        } else {
+            return nested.selectAttribute(name);
+        }
     }
+
+    public Reference<E> selectItem(String index) throws BindingException {
+        return nested.selectItem(index);
+    }
+
+    public Reference<E> selectItem(Expression<Integer, E> index) throws BindingException {
+        return nested.selectItem(index);
+    }
+
+    public void document(Document target) {
+        nested.document(target);
+    }
+
 }
+
