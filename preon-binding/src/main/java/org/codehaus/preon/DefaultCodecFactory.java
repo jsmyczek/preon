@@ -110,6 +110,7 @@ public class DefaultCodecFactory implements CodecFactory {
         codecFactory.add(new StringCodecFactory());
         codecFactory.add(new BooleanCodecFactory());
         codecFactory.add(new EnumCodec.Factory());
+        codecFactory.add(new BitFieldCodecFactory());
 
         // Create an ObjectCodecFactory that delegates to the
         // CompoundCodecFactory for each of its members.
