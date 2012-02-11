@@ -43,6 +43,7 @@ import org.codehaus.preon.el.Expressions;
 import org.codehaus.preon.el.util.Converters;
 import org.codehaus.preon.el.util.StringBuilderDocument;
 import nl.flotsam.pecia.Documenter;
+import nl.flotsam.pecia.Para;
 import nl.flotsam.pecia.ParaContents;
 import nl.flotsam.pecia.SimpleContents;
 import org.codehaus.preon.Builder;
@@ -173,16 +174,20 @@ public class NumericCodec implements Codec<Object> {
                                     Documenters.forByteOrder(byteOrder)).text(
                                     ")");
                         } else {
-                            target
+                            Para<?> para = target
                                     .text(adjective.asTextPreferA(startWithCapital))
                                     .text(" ")
                                     .document(
                                             Documenters
                                                     .forExpression(sizeExpr))
-                                    .text("-bit integer value (").document(
-                                    Documenters
-                                            .forByteOrder(byteOrder))
+                                    .text("-bit integer value");
+                            if (sizeExpr.eval(null) > Byte.SIZE) {
+                                para.text(" (")
+                                    .document(
+                                            Documenters
+                                                .forByteOrder(byteOrder))
                                     .text(")");
+                            }
                         }
                     }
                 };
